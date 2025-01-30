@@ -5,10 +5,9 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware to parse JSON bodies
+
 app.use(express.json());
 
-// Middleware to block requests with payloads
 app.use((req, res, next) => {
     if (req.header('Content-Length') && parseInt(req.header('Content-Length')) > 0) {
         return res.status(400)
@@ -17,13 +16,11 @@ app.use((req, res, next) => {
                 'Pragma': 'no-cache',
                 'X-Content-Type-Options': 'nosniff',
             })
-
-    } else {
-        next();
+            .end();
     }
+    next();
 });
 
-// Initialize Sequelize
 const sequelize = new Sequelize(
     process.env.DB_NAME,
     process.env.DB_USER,
@@ -42,53 +39,44 @@ const sequelize = new Sequelize(
     }
 );
 
-// Define the health_checks model
-const HealthCheck = sequelize.define('health_checks', {
+const HealthCheck = sequelize.define(process.env.DB_TABLE, {
     datetime: {
         type: DataTypes.DATE,
         allowNull: false,
-        defaultValue: () => new Date(), // Use JavaScript's Date for current time
+        defaultValue: () => new Date(),
     },
 }, {
     timestamps: false,
-    tableName: 'health_checks',
+    tableName: process.env.DB_TABLE,
 });
 
-// Middleware to handle unsupported HTTP methods for /healthz
 app.all('/healthz', (req, res, next) => {
     if (req.method !== 'GET') {
-        res.status(405) // Method Not Allowed
+        return res.status(405)
             .set({
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
                 'Pragma': 'no-cache',
                 'X-Content-Type-Options': 'nosniff',
             })
             .end();
-    } else {
-        next();
     }
+    next();
 });
 
-// /healthz endpoint
 app.get('/healthz', async (req, res) => {
-    // Check for query parameters and their lengths
-    if (Object.keys(req.query).length > 0) {
-        res.status(400)
+    if (req.originalUrl !== '/healthz') {
+        return res.status(400)
             .set({
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
                 'Pragma': 'no-cache',
                 'X-Content-Type-Options': 'nosniff',
             })
-
-        return;
+            .end();
     }
 
     try {
-        // Insert a record into the health_checks table
         await HealthCheck.create({});
-
-        // Respond with 200 if the query succeeds
-        res.status(200)
+        return res.status(200)
             .set({
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
                 'Pragma': 'no-cache',
@@ -97,9 +85,7 @@ app.get('/healthz', async (req, res) => {
             .end();
     } catch (error) {
         console.error('Error inserting record:', error);
-
-        // Respond with 503 if the query fails
-        res.status(503)
+        return res.status(503)
             .set({
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
                 'Pragma': 'no-cache',
@@ -109,25 +95,20 @@ app.get('/healthz', async (req, res) => {
     }
 });
 
-// Catch-all middleware for invalid paths
 app.use((req, res) => {
-    res.status(400)
+    return res.status(400)
         .set({
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
             'X-Content-Type-Options': 'nosniff',
         })
-
+        .end();
 });
 
-// Sync Sequelize models and start the server
 (async () => {
     try {
         await sequelize.authenticate();
-        console.log('Database connected successfully.');
-
-        await sequelize.sync(); // Ensures the health_checks table exists
-        console.log('Database synced successfully.');
+        await sequelize.sync();
 
         app.listen(PORT, () => {
             console.log(`Server running on http://localhost:${PORT}`);
