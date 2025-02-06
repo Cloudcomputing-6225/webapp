@@ -26,3 +26,6 @@ Technologies Used
 To start:
 npm install
 npm start
+
+wrote tests for the existing file
+and shellscript for the application to run itself
