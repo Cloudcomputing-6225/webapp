@@ -1,4 +1,4 @@
-name: Webapp CI
+name: WEBAPP CI
 
 on:
   pull_request:
