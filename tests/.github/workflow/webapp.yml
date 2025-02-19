@@ -1,0 +1,84 @@
+name: Webapp CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: ${{ secrets.DB_NAME }}
+          MYSQL_USER: ${{ secrets.DB_USER }}
+          MYSQL_PASSWORD: ${{ secrets.DB_PASS }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.DB_PASS }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install Required Packages
+        run: npm install aws-sdk file-type dotenv mysql2 chai supertest mocha sinon winston node-statsd
+
+      - name: Create .env File Using Secrets
+        run: |
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env  # Fixed to use 127.0.0.1
+          echo "DB_PORT=3306" >> .env
+          echo "PORT=3001" >> .env
+
+      - name: Wait for MySQL to be Ready
+        run: |
+          for i in {1..15}; do
+            if mysql -h 127.0.0.1 -P 3306 -u"${{ secrets.DB_USER }}" -p"${{ secrets.DB_PASS }}" -e "SELECT 1" &> /dev/null; then
+              echo "MySQL is ready!"
+              exit 0
+            fi
+            echo "Waiting for MySQL to be ready..."
+            sleep 5
+          done
+          echo "MySQL did not start in time." && exit 1
+
+      - name: Start Web Application
+        run: npm start &
+        env:
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          DB_HOST: 127.0.0.1 # Fixed to use 127.0.0.1
+          DB_PORT: 3306
+          PORT: 3001
+
+      - name: Run Tests
+        run: npm test -- --exit
+
+      - name: Stop Server
+        run: pkill -f "node" || echo "Server not running"
