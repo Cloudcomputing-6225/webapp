@@ -46,7 +46,7 @@ jobs:
       - name: Install Required Packages
         run: npm install aws-sdk file-type dotenv mysql2 chai supertest mocha sinon winston node-statsd
 
-      - name: Create .env File Using Secrets
+      - name: create .env File Using Secrets
         run: |
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
