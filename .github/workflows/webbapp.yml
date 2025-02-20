@@ -78,4 +78,4 @@ jobs:
           PORT: 3001
 
       - name: Run Tests
-        run: npm test -- --exit
+        run: npm test
