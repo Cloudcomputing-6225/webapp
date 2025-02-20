@@ -79,6 +79,3 @@ jobs:
 
       - name: Run Tests
         run: npm test -- --exit
-
-      - name: Stop Server
-        run: pkill -f "node" || echo "Server not running"
