@@ -4,7 +4,7 @@ const app = require('../app');
 describe('Health Check API Tests', () => {
     test('Should return 200 for GET /healthz', async () => {
         const res = await request(app).get('/healthz');
-        expect(res.statusCode).toBe(201);
+        expect(res.statusCode).toBe(200);
     });
 
     test('Should return 405 for POST /healthz', async () => {
