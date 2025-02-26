@@ -46,6 +46,9 @@ jobs:
         with:
           version: latest
 
+      - name: Initialize Packer Plugins
+        run: packer init .
+
       - name: Run Packer Format
         run: packer fmt -check packer.pkr.hcl
 
