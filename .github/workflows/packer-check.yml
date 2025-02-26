@@ -22,19 +22,55 @@
 #       - name: Validate Packer Template
 #         run: packer validate packer.pkr.hcl
 
+#
+
 name: Packer CI & Build
 
 on:
   pull_request:
     branches:
-      - main
+      - main # ✅ Runs validation when a PR is created
 
   push:
     branches:
-      - main
+      - main # ✅ Runs AMI build when PR is merged
 
 jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Run Integration Tests
+        run: |
+          npm install
+          npm test # ✅ Adjust this based on your framework
+
+  build-artifact:
+    needs: integration-test # ✅ Runs only if integration tests pass
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Build Application Artifact
+        run: |
+          mkdir -p /tmp/artifacts
+          npm install
+          npm run build # ✅ Adjust based on your build process
+          cp -r build/* /tmp/artifacts/
+
+      - name: Upload Artifacts for Packer Build
+        uses: actions/upload-artifact@v3
+        with:
+          name: webapp-artifacts
+          path: /tmp/artifacts/
+
   packer-format-validate:
+    needs: build-artifact
     runs-on: ubuntu-latest
 
     steps:
@@ -56,8 +92,8 @@ jobs:
         run: packer validate packer.pkr.hcl
 
   packer-build:
-    needs: packer-format-validate # Ensures validation passes before building
-    if: github.event_name == 'push' # Only runs on push (not PR)
+    needs: packer-format-validate
+    if: github.event_name == 'push' # ✅ Runs only after PR is merged
     runs-on: ubuntu-latest
 
     steps:
@@ -76,10 +112,14 @@ jobs:
         with:
           version: latest
 
-      - name: Initialize Packer Plugins # ✅ FIX: Ensures required plugins are installed
-        run: |
-          rm -rf .packer.d/plugins  # Ensure clean state
-          packer init .
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: webapp-artifacts
+          path: /tmp/artifacts/
+
+      - name: Initialize Packer Plugins
+        run: packer init .
 
       - name: Build AMI with Packer
         run: packer build packer.pkr.hcl

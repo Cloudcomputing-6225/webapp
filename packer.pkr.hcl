@@ -87,7 +87,7 @@ packer {
   }
 }
 
-# Define AWS provider
+
 variable "aws_region" {
   default = "us-east-1"
 }
@@ -103,6 +103,9 @@ source "amazon-ebs" "ubuntu" {
   instance_type = "t2.micro"
   ssh_username  = "ubuntu"
   ami_name      = "custom-ubuntu-24.04-{{timestamp}}"
+
+  ami_groups = []
+
   tags = {
     Name  = "CustomUbuntuAMI"
     Owner = "YourName"
@@ -115,19 +118,61 @@ build {
 
   provisioner "shell" {
     inline = [
+      # "export DEBIAN_FRONTEND=noninteractive",
+      # "sudo apt update -y",
+      # "sudo apt upgrade -y",
+      # "sudo apt install -y software-properties-common",
+      # "sudo add-apt-repository universe",
+      # "sudo apt-get update --fix-missing",
+      # "sudo apt-get remove -y --purge libssl-dev",                                                            # ✅ Remove any broken version
+      # "sudo apt-get autoremove -y",                                                                           # ✅ Clean up old dependencies
+      # "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl3t64=3.0.13-0ubuntu3.5", # ✅ Install correct version first
+      # "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl-dev",                   # ✅ Then install libssl-dev
+      # "sudo apt install -y mysql-server nodejs npm",
+      # "sudo systemctl daemon-reload",
+      # "sudo systemctl enable mysql",
+      # "sudo systemctl start mysql",
+      # "node -v",
+      # "npm -v"
       "export DEBIAN_FRONTEND=noninteractive",
       "sudo apt update -y",
       "sudo apt upgrade -y",
       "sudo apt install -y software-properties-common",
       "sudo add-apt-repository universe",
       "sudo apt-get update --fix-missing",
-      "sudo apt-get remove -y --purge libssl-dev",                                                            # ✅ Remove any broken version
-      "sudo apt-get autoremove -y",                                                                           # ✅ Clean up old dependencies
-      "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl3t64=3.0.13-0ubuntu3.5", # ✅ Install correct version first
-      "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl-dev",                   # ✅ Then install libssl-dev
+      "sudo apt-get remove -y --purge libssl-dev",
+      "sudo apt-get autoremove -y",
+      "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl3t64=3.0.13-0ubuntu3.5",
+      "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl-dev",
       "sudo apt install -y mysql-server nodejs npm",
-      "sudo systemctl enable mysql",
-      "sudo systemctl start mysql",
+
+      # ✅ Create a local user `csye6225` with no login shell
+      "sudo useradd -m -s /usr/sbin/nologin -g csye6225 csye6225",
+
+      # ✅ Set permissions for application artifacts & configuration
+      "sudo mkdir -p /opt/app",
+      "sudo chown -R csye6225:csye6225 /opt/app",
+      "sudo chmod -R 750 /opt/app",
+
+      # ✅ Copy built artifacts from GitHub Actions into the custom image
+      "sudo cp /tmp/artifacts/* /opt/app/",
+
+      # ✅ Systemd service setup
+      "echo '[Unit]' | sudo tee /etc/systemd/system/webapp.service",
+      "echo 'Description=Web Application Service' | sudo tee -a /etc/systemd/system/webapp.service",
+      "echo '[Service]' | sudo tee -a /etc/systemd/system/webapp.service",
+      "echo 'User=csye6225' | sudo tee -a /etc/systemd/system/webapp.service",
+      "echo 'Group=csye6225' | sudo tee -a /etc/systemd/system/webapp.service",
+      "echo 'ExecStart=/usr/bin/node /opt/app/server.js' | sudo tee -a /etc/systemd/system/webapp.service",
+      "echo '[Install]' | sudo tee -a /etc/systemd/system/webapp.service",
+      "echo 'WantedBy=multi-user.target' | sudo tee -a /etc/systemd/system/webapp.service",
+
+      # ✅ Reload systemd to apply service file changes
+      "sudo systemctl daemon-reload",
+      "sudo systemctl enable webapp",
+      "sudo systemctl start webapp",
+
+      # ✅ Verify installations
       "node -v",
       "npm -v"
     ]
