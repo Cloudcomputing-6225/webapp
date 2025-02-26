@@ -87,7 +87,7 @@ packer {
   }
 }
 
-# Define AWS provider
+
 variable "aws_region" {
   default = "us-east-1"
 }
@@ -103,6 +103,9 @@ source "amazon-ebs" "ubuntu" {
   instance_type = "t2.micro"
   ssh_username  = "ubuntu"
   ami_name      = "custom-ubuntu-24.04-{{timestamp}}"
+
+  ami_groups = []
+
   tags = {
     Name  = "CustomUbuntuAMI"
     Owner = "YourName"
@@ -126,6 +129,7 @@ build {
       "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl3t64=3.0.13-0ubuntu3.5", # ✅ Install correct version first
       "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl-dev",                   # ✅ Then install libssl-dev
       "sudo apt install -y mysql-server nodejs npm",
+      "sudo systemctl daemon-reload",
       "sudo systemctl enable mysql",
       "sudo systemctl start mysql",
       "node -v",
