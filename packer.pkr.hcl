@@ -87,7 +87,7 @@ packer {
   }
 }
 
-# Define AWS provider
+
 variable "aws_region" {
   default = "us-east-1"
 }
@@ -105,7 +105,7 @@ source "amazon-ebs" "ubuntu" {
   ami_name      = "custom-ubuntu-24.04-{{timestamp}}"
 
   ami_groups = []
-  
+
   tags = {
     Name  = "CustomUbuntuAMI"
     Owner = "YourName"
