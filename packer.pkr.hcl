@@ -9,7 +9,7 @@ packer {
   }
 }
 
-# Define AWS provider
+
 variable "aws_region" {
   default = "us-east-1"
 }
