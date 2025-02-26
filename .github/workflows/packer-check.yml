@@ -76,5 +76,10 @@ jobs:
         with:
           version: latest
 
+      - name: Initialize Packer Plugins # ✅ FIX: Ensures required plugins are installed
+        run: |
+          rm -rf .packer.d/plugins  # Ensure clean state
+          packer init .
+
       - name: Build AMI with Packer
         run: packer build packer.pkr.hcl
