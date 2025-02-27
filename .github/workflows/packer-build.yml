@@ -87,39 +87,6 @@ jobs:
           sleep 5  
           npm test
 
-  # build:
-  #   runs-on: ubuntu-latest
-
-  #   steps:
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v2
-
-  #     - name: Building the Artifacts (Including `tests` Folder)
-  #       run: |
-  #         mkdir -p build
-  #         cp app.js package.json package-lock.json setup_application.sh -r tests build/
-  #         zip -r webapp.zip build/
-
-  #     - name: Install Packer
-  #       run: |
-  #         curl -fsSL https://releases.hashicorp.com/packer/1.7.0/packer_1.7.0_linux_amd64.zip -o packer.zip
-  #         unzip packer.zip
-  #         sudo mv packer /usr/local/bin/
-  #         packer --version
-
-  #     - name: Initialize Packer
-  #       run: packer init packer.pkr.hcl
-
-  #     - name: Validate Packer Template
-  #       run: packer validate packer.pkr.hcl
-
-  #     - name: Build Packer Image
-  #       run: packer build -var "app_archive=webapp.zip" packer.pkr.hcl
-  #       env:
-  #         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #         GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
-
   build:
     runs-on: ubuntu-latest
     steps:
