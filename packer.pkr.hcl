@@ -78,13 +78,13 @@ source "amazon-ebs" "ubuntu" {
 source "googlecompute" "ubuntu" {
   project_id   = var.gcp_project_id
   zone         = var.gcp_zone
-  source_image = "ubuntu-2404-lts"
+  source_image = "projects/ubuntu-os-cloud/global/images/ubuntu-2404-noble-amd64-v20250214"
   machine_type = "e2-medium"
   ssh_username = "ubuntu"
   image_name   = "custom-ubuntu-24-04-{{timestamp}}"
   image_family = "custom-ubuntu"
   image_labels = { owner = "sneha" }
-  network      = "default"
+  network      = "global/networks/default"
 }
 
 
