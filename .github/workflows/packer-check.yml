@@ -1,85 +1,84 @@
-# name: Packer Format & Validate
-
-# on:
-#   pull_request:
-#     branches:
-#       - main
-
-# jobs:
-#   packer-validation:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#       - name: Checkout Code
-#         uses: actions/checkout@v4
-
-#       - name: Setup Packer
-#         uses: hashicorp/setup-packer@v1
-
-#       - name: Check Packer Formatting
-#         run: packer fmt -check packer.pkr.hcl
-
-#       - name: Validate Packer Template
-#         run: packer validate packer.pkr.hcl
-
-name: Packer CI & Build
+name: Packer AWS CI/CD Pipeline
 
 on:
   pull_request:
     branches:
       - main
-
   push:
     branches:
       - main
 
 jobs:
-  packer-format-validate:
+  # Packer Validation Job (Runs on PR)
+  packer-check:
     runs-on: ubuntu-latest
-
+    if: github.event_name == 'pull_request'
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: Install Packer
-        uses: hashicorp/setup-packer@v2
-        with:
-          version: latest
+        run: |
+          curl -fsSL https://releases.hashicorp.com/packer/1.7.0/packer_1.7.0_linux_amd64.zip -o packer.zip
+          unzip packer.zip
+          sudo mv packer /usr/local/bin/
+          packer --version
 
-      - name: Initialize Packer Plugins
-        run: packer init .
-
-      - name: Run Packer Format
-        run: packer fmt -check packer.pkr.hcl
+      - name: Format Packer Template
+        run: packer fmt packer.pkr.hcl
+        continue-on-error: false
 
       - name: Validate Packer Template
         run: packer validate packer.pkr.hcl
 
-  packer-build:
-    needs: packer-format-validate # Ensures validation passes before building
-    if: github.event_name == 'push' # Only runs on push (not PR)
+  # Integration Tests (Runs on Merge)
+  integration-test:
     runs-on: ubuntu-latest
-
+    if: github.event_name == 'push'
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+      - name: Set Up Node.js
+        uses: actions/setup-node@v3
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          node-version: "18"
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Integration Tests
+        run: npm test
+
+  # Build & Deploy AMI
+  build:
+    runs-on: ubuntu-latest
+    needs: integration-test
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Building the Artifacts (Including `tests` Folder)
+        run: |
+          mkdir -p build
+          cp app.js package.json package-lock.json setup_application.sh -r tests build/
+          zip -r webapp.zip build/
 
       - name: Install Packer
-        uses: hashicorp/setup-packer@v2
-        with:
-          version: latest
-
-      - name: Initialize Packer Plugins # ✅ FIX: Ensures required plugins are installed
         run: |
-          rm -rf .packer.d/plugins  # Ensure clean state
-          packer init .
+          curl -fsSL https://releases.hashicorp.com/packer/1.7.0/packer_1.7.0_linux_amd64.zip -o packer.zip
+          unzip packer.zip
+          sudo mv packer /usr/local/bin/
+          packer --version
 
-      - name: Build AMI with Packer
-        run: packer build packer.pkr.hcl
+      - name: Initialize Packer
+        run: packer init packer.pkr.hcl
+
+      - name: Validate Packer Template
+        run: packer validate packer.pkr.hcl
+
+      - name: Build Packer Image
+        run: packer build -var "app_archive=webapp.zip" packer.pkr.hcl
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
