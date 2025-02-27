@@ -54,7 +54,7 @@ jobs:
           echo "DB_HOST=127.0.0.1" >> .env
           echo "DB_PORT=3306" >> .env
           echo "PORT=3001" >> .env
-          chmod 600 .env  # ✅ Secure the .env file
+          chmod 600 .env
 
       - name: Wait for MySQL to be Ready
         run: |
@@ -72,7 +72,7 @@ jobs:
         run: |
           echo "Starting the web application..."
           npm start &
-          sleep 5  # ✅ Ensures the app is fully started before running tests
+          sleep 5
         env:
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
@@ -84,7 +84,7 @@ jobs:
       - name: Run integration-test
         run: |
           echo "Running tests after waiting for application to fully initialize..."
-          sleep 5  # ✅ Ensures app is fully up
+          sleep 5  
           npm test
 
   build:
@@ -118,3 +118,4 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
