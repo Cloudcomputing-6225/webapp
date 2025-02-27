@@ -29,3 +29,9 @@ npm start
 
 wrote tests for the existing file
 and shellscript for the application to run itself
+
+
+packer init packer.pkr.hcl
+packer fmt packer.pkr.hcl
+packer validate packer.pkr.hcl
+
