@@ -112,11 +112,11 @@ packer {
 
 # ✅ Define Database Variables
 variable "db_host" {
-  default = "localhost"
+  default = "127.0.0.1"
 }
 
 variable "db_user" {
-  default = "test"
+  default = "sneha"
 }
 
 variable "db_password" {
