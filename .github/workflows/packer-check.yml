@@ -24,6 +24,9 @@ jobs:
           sudo mv packer /usr/local/bin/
           packer --version
 
+      - name: Initialize Packer
+        run: packer init packer.pkr.hcl
+
       - name: Format Packer Template
         run: packer fmt packer.pkr.hcl
         continue-on-error: false
