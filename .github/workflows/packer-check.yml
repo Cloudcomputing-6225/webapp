@@ -34,7 +34,7 @@ jobs:
       - name: Validate Packer Template
         run: packer validate packer.pkr.hcl
 
-  # Integration Tests (Runs on Merge)
+  # Integration Tests
   integration-test:
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
