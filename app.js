@@ -94,16 +94,15 @@ app.use((req, res) => {
     }).end();
 });
 
-// Enhanced Error-handling middleware for JSON parsing errors
 app.use((err, req, res, next) => {
     if (err instanceof SyntaxError && err.status === 400 && err.type === 'entity.parse.failed') {
         return res.status(400).set({
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
             'X-Content-Type-Options': 'nosniff',
-        }).end();  // No response body
+        }).end();
     }
-    next(err); // Pass the error to the next handler if not JSON
+    next(err);
 });
 
 if (process.env.NODE_ENV !== 'test') {
