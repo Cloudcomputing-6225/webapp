@@ -1,16 +1,17 @@
 [Unit]
-Description=Node.js Web Application
-After=network.target mysql.service
+Description=My Web Application
+After=network.target
 
 [Service]
 User=csye6225
 Group=csye6225
-WorkingDirectory=/home/ubuntu/app/build
-ExecStart=/usr/bin/node /home/ubuntu/app/build/app.js
+WorkingDirectory=/opt/app
+EnvironmentFile=/opt/app/.env
+ExecStart=/usr/bin/node app.js
 Restart=always
-StandardOutput=file:/var/log/myapp.log
-StandardError=file:/var/log/myapp-error.log
-EnvironmentFile=/home/ubuntu/app/.env
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
