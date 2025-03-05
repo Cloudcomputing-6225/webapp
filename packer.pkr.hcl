@@ -14,19 +14,20 @@ packer {
   }
 }
 
-variable "db_host" {
+# Define Database Variables
+variable "DB_HOST" {
   default = "127.0.0.1"
 }
 
-variable "db_user" {
+variable "DB_USER" {
   default = "sneha"
 }
 
-variable "db_password" {
+variable "DB_PASS" {
   default = "user3939"
 }
 
-variable "db_name" {
+variable "DB_NAME" {
   default = "healthchecksdb"
 }
 
@@ -54,9 +55,9 @@ variable "instance_type" {
   default = "t2.micro"
 }
 
-variable "app_archive" {
-  default = "webapp.zip"
-}
+# variable "app_archive" {
+#   default = "webapp.zip"
+# }
 
 source "amazon-ebs" "ubuntu" {
   profile       = var.aws_profile
@@ -87,106 +88,72 @@ source "googlecompute" "ubuntu" {
 }
 
 
-# build {
-#   sources = ["source.amazon-ebs.ubuntu", "source.googlecompute.ubuntu"]
-
-#   provisioner "file" {
-#     source      = var.app_archive
-#     destination = "/tmp/webapp.zip"
-#   }
-
-#   provisioner "shell" {
-#     inline = [
-#       "export DEBIAN_FRONTEND=noninteractive",
-#       "sudo apt update -y",
-#       "sudo apt upgrade -y",
-#       "sudo apt install -y software-properties-common",
-#       "sudo add-apt-repository universe",
-#       "sudo apt-get update --fix-missing",
-#       "sudo apt-get remove -y --purge libssl-dev",
-#       "sudo apt-get autoremove -y",
-#       "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl3t64=3.0.13-0ubuntu3.5",
-#       "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl-dev",
-#       "sudo apt-get install -y nodejs npm mysql-server unzip",
-#       "sudo systemctl start mysql",
-#       "sudo systemctl enable mysql",
-#       "sudo mysql -e \"CREATE DATABASE IF NOT EXISTS ${var.db_name};\"",
-#       "sudo mysql -e \"CREATE USER '${var.db_user}'@'localhost' IDENTIFIED BY '${var.db_password}';\"",
-#       "sudo mysql -e \"GRANT ALL PRIVILEGES ON ${var.db_name}.* TO '${var.db_user}'@'localhost';\"",
-#       "sudo mysql -e \"FLUSH PRIVILEGES;\"",
-#       "sudo groupadd -f csye6225",
-#       "sudo useradd -r -s /usr/sbin/nologin -g csye6225 csye6225",
-#       "sudo mkdir -p /home/ubuntu/app/build",
-#       "sudo unzip /tmp/webapp.zip -d /home/ubuntu/app",
-#       "ls -l /home/ubuntu/app/build",
-#       "echo 'DB_HOST=${var.db_host}' | sudo tee /home/ubuntu/app/.env",
-#       "echo 'DB_USER=${var.db_user}' | sudo tee -a /home/ubuntu/app/.env",
-#       "echo 'DB_PASSWORD=${var.db_password}' | sudo tee -a /home/ubuntu/app/.env",
-#       "echo 'DB_NAME=${var.db_name}' | sudo tee -a /home/ubuntu/app/.env",
-#       "sudo chown csye6225:csye6225 /home/ubuntu/app/.env",
-#       "sudo chmod 600 /home/ubuntu/app/.env",
-#       "cd /home/ubuntu/app/build && sudo npm install --omit=dev",
-#       "ls -lh /home/ubuntu/app/build/node_modules",
-#       "sudo chown -R csye6225:csye6225 /home/ubuntu/app",
-#       "sudo chmod -R 750 /home/ubuntu/app"
-#     ]
-#   }
-#   provisioner "file" {
-#     source      = "./myapp.service"
-#     destination = "/tmp/myapp.service"
-#   }
-
-#   provisioner "shell" {
-#     inline = [
-#       "sudo mv /tmp/myapp.service /etc/systemd/system/myapp.service",
-#       "sudo chmod 664 /etc/systemd/system/myapp.service",
-#       "sudo systemctl daemon-reload",
-#       "sudo touch /var/log/myapp.log /var/log/myapp-error.log",
-#       "sudo chmod 666 /var/log/myapp.log /var/log/myapp-error.log",
-#       "if ! sudo systemctl is-active --quiet myapp; then sudo systemctl restart myapp; fi",
-#       "if ! sudo systemctl is-active --quiet myapp; then sudo cat /var/log/myapp-error.log; fi"
-#     ]
-#   }
-# }
-
-
 build {
   sources = ["source.amazon-ebs.ubuntu", "source.googlecompute.ubuntu"]
 
+  # Upload pre-built application artifact from GitHub Actions
   provisioner "file" {
-    source      = var.app_archive
+    source      = "webapp.zip"
     destination = "/tmp/webapp.zip"
   }
 
-  provisioner "file" {
-    source      = "./setup_application.sh"
-    destination = "/tmp/setup_application.sh"
-  }
-
-  provisioner "file" {
-    content = <<EOT
-DB_HOST=${var.db_host}
-DB_USER=${var.db_user}
-DB_PASSWORD=${var.db_password}
-DB_NAME=${var.db_name}
-EOT
-    destination = "/tmp/.env"
-  }
-
+  # Install MySQL, Node.js, and Extract Application
   provisioner "shell" {
     inline = [
-      "chmod +x /tmp/setup_application.sh",
-      "sudo /tmp/setup_application.sh"
-    ]
-  }
-  provisioner "shell" {
-    inline = [
-      "sudo mv /tmp/.env /opt/app/.env",
-      "sudo chown csye6225:csye6225 /opt/app/.env",
-      "sudo chmod 600 /opt/app/.env"
+      "export DEBIAN_FRONTEND=noninteractive",
+      "sudo apt update -y",
+      "sudo apt upgrade -y",
+      "sudo apt install -y software-properties-common",
+      "sudo add-apt-repository universe",
+      "sudo apt-get update --fix-missing",
+      "sudo apt-get remove -y --purge libssl-dev",
+      "sudo apt-get autoremove -y",
+      "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl3t64=3.0.13-0ubuntu3.5",
+      "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl-dev",
+      "sudo apt-get install -y nodejs npm mysql-server unzip",
+
+      # Start and enable MySQL service
+      "sudo systemctl start mysql",
+      "sudo systemctl enable mysql",
+
+      # Configure MySQL database
+      "sudo mysql -e \"CREATE DATABASE IF NOT EXISTS ${var.DB_NAME};\"",
+      "sudo mysql -e \"CREATE USER '${var.DB_USER}'@'localhost' IDENTIFIED BY '${var.DB_PASS}';\"",
+      "sudo mysql -e \"GRANT ALL PRIVILEGES ON ${var.DB_NAME}.* TO '${var.DB_USER}'@'localhost';\"",
+      "sudo mysql -e \"FLUSH PRIVILEGES;\"",
+
+      # Create system user for application
+      "sudo groupadd -f csye6225",
+      "sudo useradd -r -s /usr/sbin/nologin -g csye6225 csye6225",
+
+      # Extract application & set correct permissions
+      "sudo mkdir -p /home/ubuntu/app/build",
+      "sudo unzip /tmp/webapp.zip -d /home/ubuntu/app",
+      "ls -l /home/ubuntu/app/build",
+
+      # Create .env file using variables
+      "echo 'DB_HOST=${var.DB_HOST}' | sudo tee /home/ubuntu/app/.env",
+      "echo 'DB_USER=${var.DB_USER}' | sudo tee -a /home/ubuntu/app/.env",
+      "echo 'DB_PASS=${var.DB_PASS}' | sudo tee -a /home/ubuntu/app/.env",
+      "echo 'DB_NAME=${var.DB_NAME}' | sudo tee -a /home/ubuntu/app/.env",
+
+      #  Secure .env file
+      "sudo chown csye6225:csye6225 /home/ubuntu/app/.env",
+      "sudo chmod 600 /home/ubuntu/app/.env",
+
+      #  Change to the correct directory before running `npm install`
+      "cd /home/ubuntu/app/build && sudo npm install --omit=dev",
+
+      #  Verify `node_modules` exists
+      "ls -lh /home/ubuntu/app/build/node_modules",
+
+      #  Ensure correct ownership & permissions
+      "sudo chown -R csye6225:csye6225 /home/ubuntu/app",
+      "sudo chmod -R 750 /home/ubuntu/app"
     ]
   }
 
+  #  Add systemd service for the application
   provisioner "file" {
     source      = "./myapp.service"
     destination = "/tmp/myapp.service"
@@ -194,20 +161,18 @@ EOT
 
   provisioner "shell" {
     inline = [
-      "echo 'Configuring systemd service...'",
       "sudo mv /tmp/myapp.service /etc/systemd/system/myapp.service",
       "sudo chmod 664 /etc/systemd/system/myapp.service",
       "sudo systemctl daemon-reload",
-      "sudo systemctl enable myapp",
 
-      "echo 'Creating log files for the service...'",
+      #  Ensure logs directory exists
       "sudo touch /var/log/myapp.log /var/log/myapp-error.log",
       "sudo chmod 666 /var/log/myapp.log /var/log/myapp-error.log",
 
-      "echo 'Starting the application service...'",
+      #  Restart service only if it's not active
       "if ! sudo systemctl is-active --quiet myapp; then sudo systemctl restart myapp; fi",
 
-      "echo 'Verifying service status...'",
+      #  Print logs if service fails
       "if ! sudo systemctl is-active --quiet myapp; then sudo cat /var/log/myapp-error.log; fi"
     ]
   }
