@@ -55,10 +55,6 @@ variable "instance_type" {
   default = "t2.micro"
 }
 
-# variable "app_archive" {
-#   default = "webapp.zip"
-# }
-
 source "amazon-ebs" "ubuntu" {
   profile       = var.aws_profile
   region        = var.aws_region
@@ -122,35 +118,6 @@ build {
       "sudo mysql -e \"CREATE USER '${var.DB_USER}'@'localhost' IDENTIFIED BY '${var.DB_PASS}';\"",
       "sudo mysql -e \"GRANT ALL PRIVILEGES ON ${var.DB_NAME}.* TO '${var.DB_USER}'@'localhost';\"",
       "sudo mysql -e \"FLUSH PRIVILEGES;\"",
-
-      # # Create system user for application
-      # "sudo groupadd -f csye6225",
-      # "sudo useradd -r -s /usr/sbin/nologin -g csye6225 csye6225",
-
-      # # Extract application & set correct permissions
-      # "sudo mkdir -p /home/ubuntu/app/build",
-      # "sudo unzip /tmp/webapp.zip -d /home/ubuntu/app",
-      # "ls -l /home/ubuntu/app/build",
-
-      # # Create .env file using variables
-      # "echo 'DB_HOST=${var.DB_HOST}' | sudo tee /home/ubuntu/app/.env",
-      # "echo 'DB_USER=${var.DB_USER}' | sudo tee -a /home/ubuntu/app/.env",
-      # "echo 'DB_PASS=${var.DB_PASS}' | sudo tee -a /home/ubuntu/app/.env",
-      # "echo 'DB_NAME=${var.DB_NAME}' | sudo tee -a /home/ubuntu/app/.env",
-
-      # #  Secure .env file
-      # "sudo chown csye6225:csye6225 /home/ubuntu/app/.env",
-      # "sudo chmod 600 /home/ubuntu/app/.env",
-
-      # #  Change to the correct directory before running `npm install`
-      # "cd /home/ubuntu/app/build && sudo npm install --omit=dev",
-
-      # #  Verify `node_modules` exists
-      # "ls -lh /home/ubuntu/app/build/node_modules",
-
-      # #  Ensure correct ownership & permissions
-      # "sudo chown -R csye6225:csye6225 /home/ubuntu/app",
-      # "sudo chmod -R 750 /home/ubuntu/app"
 
       # Create application user
       "sudo groupadd -f csye6225",
