@@ -96,7 +96,7 @@ jobs:
       - name: Building the Artifacts (Including `tests` Folder)
         run: |
           mkdir -p build
-          cp app.js package.json package-lock.json -r tests build/
+          cp app.js package.json package-lock.json setup_application.sh -r tests build/
           zip -r webapp.zip build/
 
       - name: Install Packer
@@ -124,7 +124,7 @@ jobs:
         run: packer validate packer.pkr.hcl
 
       - name: Build Packer Image
-        run: packer build packer.pkr.hcl
+        run: packer build -var "app_archive=webapp.zip" packer.pkr.hcl
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
