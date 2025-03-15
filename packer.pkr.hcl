@@ -15,19 +15,19 @@ packer {
 }
 
 # Define Database Variables
-variable "DB_HOST" {
+variable "db_host" {
   default = "127.0.0.1"
 }
 
-variable "DB_USER" {
+variable "db_user" {
   default = "sneha"
 }
 
-variable "DB_PASS" {
+variable "db_password" {
   default = "user3939"
 }
 
-variable "DB_NAME" {
+variable "db_name" {
   default = "healthchecksdb"
 }
 
@@ -53,6 +53,10 @@ variable "ami_name" {
 
 variable "instance_type" {
   default = "t2.micro"
+}
+
+variable "app_archive" {
+  default = "webapp.zip"
 }
 
 source "amazon-ebs" "ubuntu" {
@@ -89,7 +93,7 @@ build {
 
   # Upload pre-built application artifact from GitHub Actions
   provisioner "file" {
-    source      = "webapp.zip"
+    source      = var.app_archive
     destination = "/tmp/webapp.zip"
   }
 
@@ -107,45 +111,45 @@ build {
       "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl3t64=3.0.13-0ubuntu3.5",
       "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl-dev",
       "sudo apt-get install -y nodejs npm mysql-server unzip",
-      "sudo npm install -g nodemon",
 
       # Start and enable MySQL service
       "sudo systemctl start mysql",
       "sudo systemctl enable mysql",
 
       # Configure MySQL database
-      "sudo mysql -e \"CREATE DATABASE IF NOT EXISTS ${var.DB_NAME};\"",
-      "sudo mysql -e \"CREATE USER '${var.DB_USER}'@'localhost' IDENTIFIED BY '${var.DB_PASS}';\"",
-      "sudo mysql -e \"GRANT ALL PRIVILEGES ON ${var.DB_NAME}.* TO '${var.DB_USER}'@'localhost';\"",
+      "sudo mysql -e \"CREATE DATABASE IF NOT EXISTS ${var.db_name};\"",
+      "sudo mysql -e \"CREATE USER '${var.db_user}'@'localhost' IDENTIFIED BY '${var.db_password}';\"",
+      "sudo mysql -e \"GRANT ALL PRIVILEGES ON ${var.db_name}.* TO '${var.db_user}'@'localhost';\"",
       "sudo mysql -e \"FLUSH PRIVILEGES;\"",
 
-      # Create application user
+      # Create system user for application
       "sudo groupadd -f csye6225",
       "sudo useradd -r -s /usr/sbin/nologin -g csye6225 csye6225",
 
-      # Create application directory
-      "sudo mkdir -p /home/csye6225/webapp",
-      "sudo unzip /tmp/webapp.zip -d /home/csye6225/webapp",
+      # Extract application & set correct permissions
+      "sudo mkdir -p /home/ubuntu/app/build",
+      "sudo unzip /tmp/webapp.zip -d /home/ubuntu/app",
+      "ls -l /home/ubuntu/app/build",
 
-      # Move files from build folder to main folder
-      "sudo mv /home/csye6225/webapp/build/* /home/csye6225/webapp/",
-      "sudo rm -rf /home/csye6225/webapp/build",
+      # Create .env file using variables
+      "echo 'DB_HOST=${var.db_host}' | sudo tee /home/ubuntu/app/.env",
+      "echo 'DB_USER=${var.db_user}' | sudo tee -a /home/ubuntu/app/.env",
+      "echo 'DB_PASSWORD=${var.db_password}' | sudo tee -a /home/ubuntu/app/.env",
+      "echo 'DB_NAME=${var.db_name}' | sudo tee -a /home/ubuntu/app/.env",
 
-      # Create .env file with proper permissions
-      "echo 'DB_HOST=${var.DB_HOST}' | sudo tee /home/csye6225/webapp/.env",
-      "echo 'DB_USER=${var.DB_USER}' | sudo tee -a /home/csye6225/webapp/.env",
-      "echo 'DB_PASS=${var.DB_PASS}' | sudo tee -a /home/csye6225/webapp/.env",
-      "echo 'DB_NAME=${var.DB_NAME}' | sudo tee -a /home/csye6225/webapp/.env",
-      "sudo chown csye6225:csye6225 /home/csye6225/webapp/.env",
-      "sudo chmod 600 /home/csye6225/webapp/.env",
+      #  Secure .env file
+      "sudo chown csye6225:csye6225 /home/ubuntu/app/.env",
+      "sudo chmod 600 /home/ubuntu/app/.env",
 
-      # Install dependencies
-      "cd /home/csye6225/webapp && sudo npm install --omit=dev",
-      "ls -lh /home/csye6225/webapp/node_modules",
+      #  Change to the correct directory before running `npm install`
+      "cd /home/ubuntu/app/build && sudo npm install --omit=dev",
 
-      # Set correct permissions
-      "sudo chown -R csye6225:csye6225 /home/csye6225/webapp",
-      "sudo chmod -R 750 /home/csye6225/webapp"
+      #  Verify `node_modules` exists
+      "ls -lh /home/ubuntu/app/build/node_modules",
+
+      #  Ensure correct ownership & permissions
+      "sudo chown -R csye6225:csye6225 /home/ubuntu/app",
+      "sudo chmod -R 750 /home/ubuntu/app"
     ]
   }
 
@@ -160,16 +164,15 @@ build {
       "sudo mv /tmp/myapp.service /etc/systemd/system/myapp.service",
       "sudo chmod 664 /etc/systemd/system/myapp.service",
       "sudo systemctl daemon-reload",
-      "sudo systemctl enable myapp",
 
-      # Ensure logs directory exists
+      #  Ensure logs directory exists
       "sudo touch /var/log/myapp.log /var/log/myapp-error.log",
       "sudo chmod 666 /var/log/myapp.log /var/log/myapp-error.log",
 
-      # Start service
-      "sudo systemctl restart myapp",
+      #  Restart service only if it's not active
+      "if ! sudo systemctl is-active --quiet myapp; then sudo systemctl restart myapp; fi",
 
-      # Print logs if service fails
+      #  Print logs if service fails
       "if ! sudo systemctl is-active --quiet myapp; then sudo cat /var/log/myapp-error.log; fi"
     ]
   }

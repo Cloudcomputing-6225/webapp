@@ -5,12 +5,12 @@ After=network.target mysql.service
 [Service]
 User=csye6225
 Group=csye6225
-WorkingDirectory=/home/csye6225/webapp
-ExecStart=/usr/local/bin/nodemon /home/csye6225/webapp/app.js
+WorkingDirectory=/home/ubuntu/app/build
+ExecStart=/usr/bin/node /home/ubuntu/app/build/app.js
 Restart=always
 StandardOutput=file:/var/log/myapp.log
 StandardError=file:/var/log/myapp-error.log
-EnvironmentFile=/home/csye6225/webapp/.env
+EnvironmentFile=/home/ubuntu/app/.env
 
 [Install]
 WantedBy=multi-user.target
