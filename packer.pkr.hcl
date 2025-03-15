@@ -1,4 +1,4 @@
- packer {
+packer {
   required_version = ">= 1.7.0"
 
   required_plugins {
@@ -19,7 +19,7 @@ variable "db_host" {
   default = "127.0.0.1"
 }
 
-variable "db_user" {
+variable "db_user1" {
   default = "sneha"
 }
 
