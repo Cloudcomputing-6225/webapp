@@ -19,7 +19,7 @@ variable "db_host" {
   default = "127.0.0.1"
 }
 
-variable "db_user1" {
+variable "db_user" {
   default = "sneha"
 }
 
