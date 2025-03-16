@@ -132,29 +132,10 @@ jobs:
 
       - name: Share AMI with DEMO AWS Account
         run: |
+          export AWS_DEFAULT_REGION="us-east-1"  
           AMI_ID=$(aws ec2 describe-images --owners self --region $AWS_DEFAULT_REGION --query 'Images[-1].[ImageId]' --output text)
           aws ec2 modify-image-attribute --image-id $AMI_ID --launch-permission "Add=[{UserId=${{ secrets.AWS_DEMO_ACCOUNT_ID }} }]" --region $AWS_DEFAULT_REGION
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
-
-      - name: Retrieve Latest GCP Image
-        run: |
-          GCP_IMAGE_NAME=$(gcloud compute images list --project $GCP_PROJECT_ID --sort-by=~creationTimestamp --format="value(NAME)" | head -n 1)
-          echo "Latest GCP Image: $GCP_IMAGE_NAME"
-          echo "GCP_IMAGE_NAME=$GCP_IMAGE_NAME" >> $GITHUB_ENV
-        env:
-          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Share GCP Image with Demo GCP Project
-        run: |
-          echo "Sharing GCP Image: $GCP_IMAGE_NAME with GCP Demo Project: $GCP_DEMO_PROJECT_ID"
-          gcloud compute images add-iam-policy-binding $GCP_IMAGE_NAME \
-              --project=$GCP_PROJECT_ID \
-              --member="projectEditor:$GCP_DEMO_PROJECT_ID" \
-              --role="roles/compute.imageUser"
-        env:
-          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-          GCP_DEMO_PROJECT_ID: ${{ secrets.GCP_DEMO_PROJECT_ID }}
