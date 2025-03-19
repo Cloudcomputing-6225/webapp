@@ -6,17 +6,12 @@ packer {
       version = ">= 1.0.0"
       source  = "github.com/hashicorp/amazon"
     }
-
-    googlecompute = {
-      version = ">= 1.0.0"
-      source  = "github.com/hashicorp/googlecompute"
-    }
   }
 }
 
 # Define Database Variables
 variable "DB_HOST" {
-  default = "127.0.0.1"
+  default = "your-rds-endpoint"
 }
 
 variable "DB_USER" {
@@ -31,20 +26,16 @@ variable "DB_NAME" {
   default = "healthchecksdb"
 }
 
-variable "aws_region" {
+variable "AWS_REGION" {
   default = "us-east-1"
 }
 
-variable "aws_profile" {
+variable "AWS_PROFILE" {
   default = "dev"
 }
 
-variable "gcp_project_id" {
-  default = "webapp-dev-452001"
-}
-
-variable "gcp_zone" {
-  default = "us-central1-a"
+variable "S3_BUCKET" {
+  default = "your-s3-bucket-name"
 }
 
 variable "ami_name" {
@@ -56,8 +47,8 @@ variable "instance_type" {
 }
 
 source "amazon-ebs" "ubuntu" {
-  profile       = var.aws_profile
-  region        = var.aws_region
+  profile       = var.AWS_PROFILE
+  region        = var.AWS_REGION
   source_ami    = "ami-0fe67b8200454bad4"
   instance_type = var.instance_type
   ssh_username  = "ubuntu"
@@ -71,21 +62,8 @@ source "amazon-ebs" "ubuntu" {
   }
 }
 
-source "googlecompute" "ubuntu" {
-  project_id   = var.gcp_project_id
-  zone         = var.gcp_zone
-  source_image = "ubuntu-2404-noble-amd64-v20250214"
-  machine_type = "e2-medium"
-  ssh_username = "ubuntu"
-  image_name   = "custom-ubuntu-24-04-{{timestamp}}"
-  image_family = "custom-ubuntu"
-  image_labels = { owner = "sneha" }
-  network      = "default"
-}
-
-
 build {
-  sources = ["source.amazon-ebs.ubuntu", "source.googlecompute.ubuntu"]
+  sources = ["source.amazon-ebs.ubuntu"]
 
   # Upload pre-built application artifact from GitHub Actions
   provisioner "file" {
@@ -106,18 +84,7 @@ build {
       "sudo apt-get autoremove -y",
       "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl3t64=3.0.13-0ubuntu3.5",
       "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl-dev",
-      "sudo apt-get install -y nodejs npm mysql-server unzip",
-      "sudo npm install -g nodemon",
-
-      # Start and enable MySQL service
-      "sudo systemctl start mysql",
-      "sudo systemctl enable mysql",
-
-      # Configure MySQL database
-      "sudo mysql -e \"CREATE DATABASE IF NOT EXISTS ${var.DB_NAME};\"",
-      "sudo mysql -e \"CREATE USER '${var.DB_USER}'@'localhost' IDENTIFIED BY '${var.DB_PASS}';\"",
-      "sudo mysql -e \"GRANT ALL PRIVILEGES ON ${var.DB_NAME}.* TO '${var.DB_USER}'@'localhost';\"",
-      "sudo mysql -e \"FLUSH PRIVILEGES;\"",
+      "sudo apt-get install -y awscli unzip nodejs npm",
 
       # Create application user
       "sudo groupadd -f csye6225",
@@ -136,6 +103,8 @@ build {
       "echo 'DB_USER=${var.DB_USER}' | sudo tee -a /home/csye6225/webapp/.env",
       "echo 'DB_PASS=${var.DB_PASS}' | sudo tee -a /home/csye6225/webapp/.env",
       "echo 'DB_NAME=${var.DB_NAME}' | sudo tee -a /home/csye6225/webapp/.env",
+      "echo 'AWS_REGION=${var.AWS_REGION}' | sudo tee -a /home/csye6225/webapp/.env",
+      "echo 'S3_BUCKET=${var.S3_BUCKET}' | sudo tee -a /home/csye6225/webapp/.env",
       "sudo chown csye6225:csye6225 /home/csye6225/webapp/.env",
       "sudo chmod 600 /home/csye6225/webapp/.env",
 
