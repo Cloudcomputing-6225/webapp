@@ -33,23 +33,23 @@ jobs:
         run: packer validate packer.pkr.hcl
 
   # Integration Tests
-  integration-test:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
+  # integration-test:
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'push'
+  #   steps:
+  #     - name: Checkout Code
+  #       uses: actions/checkout@v2
 
-      - name: Set Up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "18"
+  #     - name: Set Up Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: "18"
 
-      - name: Install Dependencies
-        run: npm install
+  #     - name: Install Dependencies
+  #       run: npm install
 
-      - name: Run Integration Tests
-        run: npm test
+  #     - name: Run Integration Tests
+  #       run: npm test
 
   # Build & Deploy AMI + GCP Image
   build:

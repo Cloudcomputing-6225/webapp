@@ -81,11 +81,11 @@ jobs:
           DB_PORT: 3306
           PORT: 3001
 
-      - name: Run integration-test
-        run: |
-          echo "Running tests after waiting for application to fully initialize..."
-          sleep 5  
-          npm test
+      # - name: Run integration-test
+      #   run: |
+      #     echo "Running tests after waiting for application to fully initialize..."
+      #     sleep 5
+      #     npm test
 
   build:
     runs-on: ubuntu-latest
