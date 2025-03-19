@@ -84,7 +84,12 @@ build {
       "sudo apt-get autoremove -y",
       "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl3t64=3.0.13-0ubuntu3.5",
       "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl-dev",
-      "sudo apt-get install -y awscli unzip nodejs npm",
+      "sudo apt-get install -y unzip nodejs npm",
+      "curl 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o 'awscliv2.zip'",
+      "unzip awscliv2.zip",
+      "sudo ./aws/install",
+      "aws --version",
+      "rm -rf awscliv2.zip aws",
 
       # Create application user
       "sudo groupadd -f csye6225",
