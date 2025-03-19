@@ -206,7 +206,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 // Configure AWS SDK
-AWS.config.update({ region: process.env.aws_region });
+AWS.config.update({ region: process.env.AWS_REGION });
 const s3 = new AWS.S3();
 
 // Database connection
