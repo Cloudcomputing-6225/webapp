@@ -317,7 +317,7 @@ app.get('/files', async (req, res) => {
     }
 });
 
-// Delete File API (Fixes S3 Key Handling)
+// Delete File API 
 app.delete('/files/:id', async (req, res) => {
     try {
         const file = await File.findByPk(req.params.id);
@@ -330,7 +330,7 @@ app.delete('/files/:id', async (req, res) => {
         await s3.deleteObject({ Bucket: process.env.s3_bucket, Key: s3Key }).promise();
         await file.destroy();
 
-        res.status(204).end(); // ✅ Follows REST best practices
+        res.status(204).end();
     } catch (error) {
         console.error("Delete error:", error);
         res.status(500).json({ error: 'Failed to delete file', details: error.message });
