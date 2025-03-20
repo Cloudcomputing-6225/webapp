@@ -48,8 +48,8 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      # - name: Run Integration Tests
-      #   run: npm test
+      - name: Run Integration Tests
+        run: npm test
 
   # Build & Deploy AMI + GCP Image
   build:

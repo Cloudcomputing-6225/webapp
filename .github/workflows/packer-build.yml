@@ -81,11 +81,11 @@ jobs:
           DB_PORT: 3306
           PORT: 3001
 
-      # - name: Run integration-test
-      #   run: |
-      #     echo "Running tests after waiting for application to fully initialize..."
-      #     sleep 5
-      #     npm test
+      - name: Run integration-test
+        run: |
+          echo "Running tests after waiting for application to fully initialize..."
+          sleep 5
+          npm test
 
   build:
     runs-on: ubuntu-latest
@@ -132,7 +132,7 @@ jobs:
 
       - name: Share AMI with DEMO AWS Account
         run: |
-          export AWS_DEFAULT_REGION="us-east-1"  
+          export AWS_REGION="us-east-1"  
           AMI_ID=$(aws ec2 describe-images --owners self --region $AWS_REGION --query 'Images[-1].[ImageId]' --output text)
           aws ec2 modify-image-attribute --image-id $AMI_ID --launch-permission "Add=[{UserId=${{ secrets.AWS_DEMO_ACCOUNT_ID }} }]" --region $AWS_REGION
         env:
