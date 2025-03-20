@@ -85,7 +85,7 @@ build {
       "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl3t64=3.0.13-0ubuntu3.5",
       "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl-dev",
       "sudo apt-get install -y unzip nodejs npm",
-      
+
       # Create application user
       "sudo groupadd -f csye6225",
       "sudo useradd -r -s /usr/sbin/nologin -g csye6225 csye6225",
