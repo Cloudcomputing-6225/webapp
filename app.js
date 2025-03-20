@@ -362,6 +362,7 @@ app.use((err, req, res, next) => {
 if (process.env.NODE_ENV !== 'test') {
     (async () => {
         try {
+            await sequelize.authenticate();
             await sequelize.sync();
             app.listen(PORT, () => {
                 console.log(`Server running on http://localhost:${PORT}`);
