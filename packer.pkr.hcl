@@ -11,7 +11,7 @@ packer {
 
 # Define Database Variables
 variable "DB_HOST" {
-  default = "your-rds-endpoint"
+  default = "127.0.0.1"
 }
 
 variable "DB_USER" {
@@ -34,8 +34,8 @@ variable "AWS_PROFILE" {
   default = "dev"
 }
 
-variable "S3_BUCKET" {
-  default = "your-s3-bucket-name"
+variable "S3_BUCKET_NAME" {
+  default = "snehacsye6225"
 }
 
 variable "ami_name" {
@@ -85,12 +85,7 @@ build {
       "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl3t64=3.0.13-0ubuntu3.5",
       "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl-dev",
       "sudo apt-get install -y unzip nodejs npm",
-      # "curl 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o 'awscliv2.zip'",
-      # "unzip awscliv2.zip",
-      # "sudo ./aws/install",
-      # "aws --version",
-      # "rm -rf awscliv2.zip aws",
-
+      
       # Create application user
       "sudo groupadd -f csye6225",
       "sudo useradd -r -s /usr/sbin/nologin -g csye6225 csye6225",
@@ -109,7 +104,7 @@ build {
       "echo 'DB_PASS=${var.DB_PASS}' | sudo tee -a /home/csye6225/webapp/.env",
       "echo 'DB_NAME=${var.DB_NAME}' | sudo tee -a /home/csye6225/webapp/.env",
       "echo 'AWS_REGION=${var.AWS_REGION}' | sudo tee -a /home/csye6225/webapp/.env",
-      "echo 'S3_BUCKET=${var.S3_BUCKET}' | sudo tee -a /home/csye6225/webapp/.env",
+      "echo 'S3_BUCKET_NAME=${var.S3_BUCKET_NAME}' | sudo tee -a /home/csye6225/webapp/.env",
       "sudo chown csye6225:csye6225 /home/csye6225/webapp/.env",
       "sudo chmod 600 /home/csye6225/webapp/.env",
 

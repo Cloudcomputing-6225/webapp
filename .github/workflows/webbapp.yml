@@ -17,6 +17,7 @@ jobs:
           MYSQL_USER: "${{ secrets.DB_USER }}"
           MYSQL_PASSWORD: "${{ secrets.DB_PASS }}"
           MYSQL_ROOT_PASSWORD: "${{ secrets.DB_PASS }}"
+
         ports:
           - 3306:3306
         options: >-
@@ -51,6 +52,7 @@ jobs:
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
           echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
+          echo "S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}" >> .env
           echo "DB_HOST=127.0.0.1" >> .env
           echo "DB_PORT=3306" >> .env
           echo "PORT=3001" >> .env
@@ -77,6 +79,7 @@ jobs:
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASS: ${{ secrets.DB_PASS }}
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
           PORT: 3001
