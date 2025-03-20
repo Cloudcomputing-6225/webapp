@@ -194,7 +194,7 @@
 
 const express = require('express');
 const { Sequelize, DataTypes } = require('sequelize');
-const AWS = require('aws-sdk');
+const { S3Client, PutObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
 const multer = require('multer');
 const multerS3 = require('multer-s3');
 const crypto = require('crypto'); // ✅ Added for unique filenames
@@ -206,9 +206,8 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 // Configure AWS SDK
-AWS.config.update({ region: process.env.AWS_REGION });
-const s3 = new AWS.S3();
-
+// AWS.config.update({ region: process.env.AWS_REGION });
+const s3 = new S3Client({ region: process.env.AWS_REGION });
 // Database connection
 const sequelize = new Sequelize(
     process.env.DB_NAME,
