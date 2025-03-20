@@ -167,9 +167,15 @@ app.delete('/v1/file/:id', async (req, res) => {
     }
 });
 
-// Start Server
-app.listen(port, () => {
-    logger.info(`Server running on port ${port}`);
-});
+// // Start Server
+// app.listen(port, () => {
+//     logger.info(`Server running on port ${port}`);
+// });
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+    app.listen(port, () => {
+        logger.info(`Server running on port ${port}`);
+    });
+}
 
 export { app, File, sequelize };
