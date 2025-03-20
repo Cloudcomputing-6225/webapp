@@ -271,33 +271,57 @@ app.get('/healthz', async (req, res) => {
     }
 });
 
-// Multer S3 storage configuration (Prevents overwrites)
-const upload = multer({
-    storage: multerS3({
-        s3: s3,
-        bucket: process.env.s3_bucket,
-        metadata: (req, file, cb) => {
-            cb(null, { fieldName: file.fieldname });
-        },
-        key: (req, file, cb) => {
-            const uniqueKey = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}-${file.originalname}`;
-            cb(null, uniqueKey);
-        }
-    })
-});
+// // Multer S3 storage configuration (Prevents overwrites)
+// const upload = multer({
+//     storage: multerS3({
+//         s3: s3,
+//         bucket: process.env.s3_bucket,
+//         metadata: (req, file, cb) => {
+//             cb(null, { fieldName: file.fieldname });
+//         },
+//         key: (req, file, cb) => {
+//             const uniqueKey = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}-${file.originalname}`;
+//             cb(null, uniqueKey);
+//         }
+//     })
+// });
 
-// File Upload API
-app.post('/upload', upload.single('file'), async (req, res) => {
+const uploadFileToS3 = async (file) => {
+    const s3Params = {
+        Bucket: process.env.s3_bucket,
+        Key: `${Date.now()}-${file.originalname}`,
+        Body: file.buffer,
+        ContentType: file.mimetype
+    };
+    return s3.upload(s3Params).promise();
+};
+
+// // File Upload API
+// app.post('/upload', upload.single('file'), async (req, res) => {
+//     try {
+//         if (!req.file) {
+//             return res.status(400).json({ error: 'No file uploaded. Please attach a file.' });
+//         }
+
+//         const newFile = await File.create({
+//             fileName: req.file.originalname,
+//             s3Url: req.file.location
+//         });
+//         res.status(201).json(newFile);
+//     } catch (error) {
+//         console.error("Upload error:", error);
+//         res.status(500).json({ error: 'File upload failed', details: error.message });
+//     }
+// });
+
+app.post('/upload', multer().single('file'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded. Please attach a file.' });
         }
 
-        const newFile = await File.create({
-            fileName: req.file.originalname,
-            s3Url: req.file.location
-        });
-        res.status(201).json(newFile);
+        const uploadResponse = await uploadFileToS3(req.file);
+        res.status(201).json({ fileName: req.file.originalname, s3Url: uploadResponse.Location });
     } catch (error) {
         console.error("Upload error:", error);
         res.status(500).json({ error: 'File upload failed', details: error.message });
