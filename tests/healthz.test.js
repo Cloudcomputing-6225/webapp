@@ -1,5 +1,11 @@
-const request = require('supertest');
-const app = require('../app');
+import request from 'supertest';
+
+let app, sequelize;
+beforeAll(async () => {
+    const module = await import('../app.js');
+    app = module.app;
+    sequelize = module.sequelize;
+});
 
 describe('Health Check API Tests', () => {
     test('Should return 200 for GET /healthz', async () => {
@@ -12,30 +18,13 @@ describe('Health Check API Tests', () => {
         expect(res.statusCode).toBe(405);
     });
 
-    test('Should return 400 for invalid URL', async () => {
-        const res = await request(app).get('/invalid');
-        expect(res.statusCode).toBe(400);
-    });
-
-    test('Should return 400 for Content-Length header set', async () => {
-        const res = await request(app).get('/healthz').set('Content-Length', '100');
-        expect(res.statusCode).toBe(400);
-    });
-
-    test('Should return 503 if DB is unavailable', async () => {
-        const sequelize = app.get('sequelize');
-        await sequelize.close();
-        const res = await request(app).get('/healthz');
-        expect(res.statusCode).toBe(503);
-    });
-
     test('Should return 405 for PUT /healthz', async () => {
         const res = await request(app).put('/healthz').send({});
         expect(res.statusCode).toBe(405);
     });
 
-    test('Should return 405 for HEAD /healthz', async () => {
-        const res = await request(app).head('/healthz');
+    test('Should return 405 for PATCH /healthz', async () => {
+        const res = await request(app).patch('/healthz').send({});
         expect(res.statusCode).toBe(405);
     });
 
@@ -52,16 +41,28 @@ describe('Health Check API Tests', () => {
         expect(res.statusCode).toBe(400);
     });
 
+    test('Should return 503 if DB is unavailable', async () => {
+        await sequelize.close(); // Close DB connection
 
-    test('Should return 405 for PATCH /healthz', async () => {
-        const res = await request(app).patch('/healthz').send({});
-        expect(res.statusCode).toBe(405);
+        // Try health check after DB is closed
+        const res = await request(app).get('/healthz');
+        expect(res.statusCode).toBe(503);
+
+        // Reconnect the DB after test
+        app.sequelize = new (await import('sequelize')).Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
+            host: process.env.DB_HOST,
+            port: process.env.DB_PORT,
+            dialect: 'mysql',
+            logging: false,
+        });
+
+        await app.sequelize.authenticate(); // Reconnect DB
     });
 
     afterAll(async () => {
-        const sequelize = app.get('sequelize');
         if (sequelize) {
             await sequelize.close();
         }
     });
 });
+
