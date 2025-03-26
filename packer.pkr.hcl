@@ -10,21 +10,21 @@ packer {
 }
 
 # Define Database Variables
-variable "DB_HOST" {
-  default = "127.0.0.1"
-}
+# variable "DB_HOST" {
+#   default = "127.0.0.1"
+# }
 
-variable "DB_USER" {
-  default = "sneha"
-}
+# variable "DB_USER" {
+#   default = "sneha"
+# }
 
-variable "DB_PASS" {
-  default = "user3939"
-}
+# variable "DB_PASS" {
+#   default = "user3939"
+# }
 
-variable "DB_NAME" {
-  default = "healthchecksdb"
-}
+# variable "DB_NAME" {
+#   default = "healthchecksdb"
+# }
 
 variable "AWS_REGION" {
   default = "us-east-1"
@@ -34,9 +34,9 @@ variable "AWS_PROFILE" {
   default = "dev"
 }
 
-variable "S3_BUCKET_NAME" {
-  default = "snehacsye6225"
-}
+# variable "S3_BUCKET_NAME" {
+#   default = "snehacsye6225"
+# }
 
 variable "ami_name" {
   default = "custom-node-mysql"
@@ -98,15 +98,15 @@ build {
       "sudo mv /home/csye6225/webapp/build/* /home/csye6225/webapp/",
       "sudo rm -rf /home/csye6225/webapp/build",
 
-      # Create .env file with proper permissions
-      "echo 'DB_HOST=${var.DB_HOST}' | sudo tee /home/csye6225/webapp/.env",
-      "echo 'DB_USER=${var.DB_USER}' | sudo tee -a /home/csye6225/webapp/.env",
-      "echo 'DB_PASS=${var.DB_PASS}' | sudo tee -a /home/csye6225/webapp/.env",
-      "echo 'DB_NAME=${var.DB_NAME}' | sudo tee -a /home/csye6225/webapp/.env",
-      "echo 'AWS_REGION=${var.AWS_REGION}' | sudo tee -a /home/csye6225/webapp/.env",
-      "echo 'S3_BUCKET_NAME=${var.S3_BUCKET_NAME}' | sudo tee -a /home/csye6225/webapp/.env",
-      "sudo chown csye6225:csye6225 /home/csye6225/webapp/.env",
-      "sudo chmod 600 /home/csye6225/webapp/.env",
+      # # Create .env file with proper permissions
+      # "echo 'DB_HOST=${var.DB_HOST}' | sudo tee /home/csye6225/webapp/.env",
+      # "echo 'DB_USER=${var.DB_USER}' | sudo tee -a /home/csye6225/webapp/.env",
+      # "echo 'DB_PASS=${var.DB_PASS}' | sudo tee -a /home/csye6225/webapp/.env",
+      # "echo 'DB_NAME=${var.DB_NAME}' | sudo tee -a /home/csye6225/webapp/.env",
+      # "echo 'AWS_REGION=${var.AWS_REGION}' | sudo tee -a /home/csye6225/webapp/.env",
+      # "echo 'S3_BUCKET_NAME=${var.S3_BUCKET_NAME}' | sudo tee -a /home/csye6225/webapp/.env",
+      # "sudo chown csye6225:csye6225 /home/csye6225/webapp/.env",
+      # "sudo chmod 600 /home/csye6225/webapp/.env",
 
       # Install dependencies
       "cd /home/csye6225/webapp && sudo npm install --omit=dev",
