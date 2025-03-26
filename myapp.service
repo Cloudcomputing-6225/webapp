@@ -1,6 +1,6 @@
 [Unit]
 Description=Node.js Web Application
-After=network.target mysql.service
+After=network.target
 
 [Service]
 User=csye6225
