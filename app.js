@@ -29,21 +29,11 @@ const logger = winston.createLogger({
 
 logger.info('Logger initialized');
 
-
+// AWS S3 Configuration (Using IAM Role)
 const s3 = new S3Client({ region: process.env.AWS_REGION });
 
-
+// StatsD Configuration
 const statsdClient = new StatsD({ host: 'localhost', port: 8125 });
-
-
-const measureTime = async (fn, metricName) => {
-    const start = Date.now();
-    const result = await fn();
-    const duration = Date.now() - start;
-    statsdClient.timing(metricName, duration);
-    return result;
-};
-
 
 // Sequelize Database Connection (Using AWS RDS)
 const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
@@ -91,69 +81,22 @@ app.all('/healthz', (req, res, next) => {
     next();
 });
 
-// // Configure Multer for Form-Data Uploads
-// const upload = multer({
-//     limits: { fileSize: 10 * 1024 * 1024 },
-//     fileFilter: (req, file, cb) => {
-//         if (!file.mimetype.startsWith("image/")) {
-//             return cb(new Error("Only image files are allowed!"), false);
-//         }
-//         cb(null, true);
-//     }
-// });
-
+// Configure Multer for Form-Data Uploads
 const upload = multer({
-    limits: { fileSize: 10 * 1024 * 1024 }
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (!file.mimetype.startsWith("image/")) {
+            return cb(new Error("Only image files are allowed!"), false);
+        }
+        cb(null, true);
+    }
 });
 
-// // Upload File to S3 (Accepts Form-Data)
-// app.post('/v1/file', upload.single('file'), async (req, res) => {
-//     try {
-//         if (!req.file) {
-//             return res.status(400).json({ message: "No file uploaded." });
-//         }
-
-//         // Extract file details
-//         const { originalname, mimetype, buffer, size } = req.file;
-
-//         // Generate unique file name
-//         const fileName = `file-${uuidv4()}-${originalname}`;
-
-//         // S3 Upload Parameters
-//         const s3Params = {
-//             Bucket: process.env.S3_BUCKET_NAME,
-//             Key: fileName,
-//             Body: buffer,
-//             ContentType: mimetype,
-//         };
-
-//         logger.info(`Uploading file to S3: ${fileName}`);
-
-//         // Upload to S3
-//         await s3.send(new PutObjectCommand(s3Params));
-
-//         // Save file metadata in the database
-//         const fileRecord = await File.create({
-//             file_name: fileName,
-//             s3_path: `https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${fileName}`,
-//             content_type: mimetype,
-//             size: size,
-//         });
-
-//         res.status(201).json(fileRecord);
-//     } catch (error) {
-//         logger.error("File upload failed:", error);
-//         res.status(500).json({ message: "File upload failed", error: error.message });
-//     }
-// });
-
+// Upload File to S3 (Accepts Form-Data)
 app.post('/v1/file', upload.single('file'), async (req, res) => {
-    const start = Date.now();
-    statsdClient.increment('api.v1.file.upload.hit');
-
+    const startTime = Date.now();
     try {
         if (!req.file) {
-            logger.warn("No file uploaded.");
             return res.status(400).json({ message: "No file uploaded." });
         }
 
@@ -167,103 +110,74 @@ app.post('/v1/file', upload.single('file'), async (req, res) => {
             ContentType: mimetype,
         };
 
-        logger.info(`Uploading to S3: ${fileName}`);
-        await measureTime(() => s3.send(new PutObjectCommand(s3Params)), 's3.upload.duration');
+        logger.info(`Uploading file to S3: ${fileName}`);
+        const s3Start = Date.now();
+        await s3.send(new PutObjectCommand(s3Params));
+        statsdClient.timing('s3.upload_time', Date.now() - s3Start);
 
-        const fileRecord = await measureTime(() =>
-            File.create({
-                file_name: fileName,
-                s3_path: `https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${fileName}`,
-                content_type: mimetype,
-                size: size,
-            }),
-            'db.file.create.duration'
-        );
+        const fileRecord = await File.create({
+            file_name: fileName,
+            s3_path: `https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${fileName}`,
+            content_type: mimetype,
+            size: size,
+        });
 
-        statsdClient.timing('api.v1.file.upload.duration', Date.now() - start);
-        logger.info(`File uploaded: ${fileName}`);
+        statsdClient.increment('api.upload_count');
+        statsdClient.timing('api.upload_time', Date.now() - startTime);
+
+        logger.info(`File uploaded and saved: ${fileName}`);
         res.status(201).json(fileRecord);
-
     } catch (error) {
-        logger.error("Upload failed:", error);
-        res.status(500).json({ message: "Upload failed", error: error.message });
+        logger.error("File upload failed:", error);
+        res.status(500).json({ message: "File upload failed", error: error.message });
     }
 });
 
-// app.get('/v1/file/:id', async (req, res) => {
-//     try {
-//         const fileRecord = await File.findByPk(req.params.id);
-
-//         if (!fileRecord) {
-//             console.log(`File with ID ${req.params.id} not found in the database.`);
-//             return res.status(404).json({ message: 'File not found' });
-//         }
-
-//         console.log(`File found:`, fileRecord);  // Debugging
-//         res.status(200).json({ s3_path: fileRecord.s3_path });
-//     } catch (error) {
-//         console.error('Error retrieving file:', error);
-//         res.status(500).json({ message: 'Failed to retrieve file' });
-//     }
-// });
-
+// Retrieve File Metadata
 app.get('/v1/file/:id', async (req, res) => {
-    const start = Date.now();
-    statsdClient.increment('api.v1.file.get.hit');
-
+    const startTime = Date.now();
     try {
-        const fileRecord = await measureTime(() =>
-            File.findByPk(req.params.id),
-            'db.file.findById.duration'
-        );
+        const fileRecord = await File.findByPk(req.params.id);
 
         if (!fileRecord) {
-            logger.warn(`File ${req.params.id} not found`);
+            logger.warn(`File with ID ${req.params.id} not found.`);
             return res.status(404).json({ message: 'File not found' });
         }
 
-        statsdClient.timing('api.v1.file.get.duration', Date.now() - start);
         logger.info(`File retrieved: ${fileRecord.file_name}`);
-        res.status(200).json({ s3_path: fileRecord.s3_path });
+        statsdClient.increment('api.retrieve_count');
+        statsdClient.timing('api.retrieve_time', Date.now() - startTime);
 
+        res.status(200).json({ s3_path: fileRecord.s3_path });
     } catch (error) {
-        logger.error('Retrieve failed:', error);
-        res.status(500).json({ message: 'Retrieve failed' });
+        logger.error('Error retrieving file:', error);
+        res.status(500).json({ message: 'Failed to retrieve file' });
     }
 });
 
 // Delete File from S3 and Database
 app.delete('/v1/file/:id', async (req, res) => {
+    const startTime = Date.now();
     try {
-        // const fileRecord = await File.findByPk(req.params.id);
-        const fileRecord = await measureTime(() =>
-            File.findByPk(req.params.id),
-            'db.file.findById.duration'
-        );
+        const fileRecord = await File.findByPk(req.params.id);
         if (!fileRecord) {
-            logger.warn(`File ${req.params.id} not found`);
+            logger.warn(`File with ID ${req.params.id} not found for deletion.`);
             return res.status(404).json({ message: 'File not found' });
         }
 
-        // await s3.send(new DeleteObjectCommand({ Bucket: process.env.S3_BUCKET_NAME, Key: fileRecord.file_name }));
-        // await fileRecord.destroy();
+        const s3Start = Date.now();
+        await s3.send(new DeleteObjectCommand({ Bucket: process.env.S3_BUCKET_NAME, Key: fileRecord.file_name }));
+        statsdClient.timing('s3.delete_time', Date.now() - s3Start);
 
-        await measureTime(() =>
-            s3.send(new DeleteObjectCommand({
-                Bucket: process.env.S3_BUCKET_NAME,
-                Key: fileRecord.file_name
-            })),
-            's3.delete.duration'
-        );
+        await fileRecord.destroy();
 
-        await measureTime(() => fileRecord.destroy(), 'db.file.delete.duration');
+        statsdClient.increment('api.delete_count');
+        statsdClient.timing('api.delete_time', Date.now() - startTime);
 
-        statsdClient.timing('api.v1.file.delete.duration', Date.now() - start);
         logger.info(`File deleted: ${fileRecord.file_name}`);
-
         res.status(204).end();
     } catch (error) {
-        logger.error('Delete failed:', error);
+        logger.error('Error deleting file:', error);
         res.status(500).json({ message: 'Failed to delete file' });
     }
 });
@@ -271,7 +185,6 @@ app.delete('/v1/file/:id', async (req, res) => {
 if (import.meta.url === `file://${process.argv[1]}`) {
     app.listen(port, () => {
         logger.info(`Server running on port ${port}`);
-        statsdClient.increment('app.started');
     });
 }
 
