@@ -143,7 +143,7 @@ build {
     ]
   }
 
-    provisioner "shell" {
+  provisioner "shell" {
     inline = [
       "echo 'Installing Amazon CloudWatch Agent...'",
 

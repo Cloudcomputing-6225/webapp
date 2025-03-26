@@ -29,13 +29,13 @@ const logger = winston.createLogger({
 
 logger.info('Logger initialized');
 
-// AWS S3 Configuration (Using IAM Role)
+
 const s3 = new S3Client({ region: process.env.AWS_REGION });
 
-// StatsD Configuration
+
 const statsdClient = new StatsD({ host: 'localhost', port: 8125 });
 
-// Utility to measure execution time and record with StatsD
+
 const measureTime = async (fn, metricName) => {
     const start = Date.now();
     const result = await fn();
