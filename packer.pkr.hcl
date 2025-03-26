@@ -135,11 +135,11 @@ build {
       "sudo touch /var/log/myapp.log /var/log/myapp-error.log",
       "sudo chmod 666 /var/log/myapp.log /var/log/myapp-error.log",
 
-      # Start service
-      "sudo systemctl restart myapp",
+      # # Start service
+      # "sudo systemctl enable myapp",
 
-      # Print logs if service fails
-      "if ! sudo systemctl is-active --quiet myapp; then sudo cat /var/log/myapp-error.log; fi"
+      # # Print logs if service fails
+      # "if ! sudo systemctl is-active --quiet myapp; then sudo cat /var/log/myapp-error.log; fi"
     ]
   }
 
