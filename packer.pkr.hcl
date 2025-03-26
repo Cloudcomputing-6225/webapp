@@ -142,4 +142,21 @@ build {
       "if ! sudo systemctl is-active --quiet myapp; then sudo cat /var/log/myapp-error.log; fi"
     ]
   }
+
+  provisioner "shell" {
+    inline = [
+      "echo 'Installing Amazon CloudWatch Agent...'",
+
+      # Download and install the agent
+      "sudo wget https://amazoncloudwatch-agent.s3.amazonaws.com/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb -O /tmp/amazon-cloudwatch-agent.deb",
+      "sudo dpkg -i /tmp/amazon-cloudwatch-agent.deb",
+
+      # Optional: create directory for config
+      "sudo mkdir -p /opt/aws/amazon-cloudwatch-agent/etc",
+
+      # (Optional) leave agent config creation to Terraform/user-data
+      "echo 'CloudWatch Agent installed successfully.'"
+    ]
+  }
+
 }
