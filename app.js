@@ -65,10 +65,19 @@ const File = sequelize.define('File', {
 
 // Health Check Endpoint
 app.get('/healthz', async (req, res) => {
+    const start = Date.now();
     try {
         await sequelize.authenticate();
+
+        statsdClient.increment('api.healthz_success_count');
+        statsdClient.timing('api.healthz_time', Date.now() - start);
+
         res.status(200).json({ message: "Service is healthy" });
     } catch (error) {
+
+        statsdClient.increment('api.healthz_failure_count');
+        statsdClient.timing('api.healthz_time', Date.now() - start);
+
         logger.error('Health check failed:', error);
         res.status(503).json({ message: "Service unavailable" });
     }
