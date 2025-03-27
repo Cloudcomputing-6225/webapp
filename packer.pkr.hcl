@@ -54,6 +54,8 @@ source "amazon-ebs" "ubuntu" {
   ssh_username  = "ubuntu"
   ami_name      = "custom-ubuntu-24.04-{{timestamp}}"
 
+  ami_users = ["445567104090", "148761659722"]
+
   ami_groups = []
 
   tags = {

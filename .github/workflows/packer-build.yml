@@ -132,12 +132,12 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           # GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
 
-      - name: Share AMI with DEMO AWS Account
-        run: |
-          export AWS_REGION="us-east-1"  
-          AMI_ID=$(aws ec2 describe-images --owners self --region $AWS_REGION --query 'Images[-1].[ImageId]' --output text)
-          aws ec2 modify-image-attribute --image-id $AMI_ID --launch-permission "Add=[{UserId=${{ secrets.AWS_DEMO_ACCOUNT_ID }} }]" --region $AWS_REGION
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          # GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
+      # - name: Share AMI with DEMO AWS Account
+      #   run: |
+      #     export AWS_REGION="us-east-1"
+      #     AMI_ID=$(aws ec2 describe-images --owners self --region $AWS_REGION --query 'Images[-1].[ImageId]' --output text)
+      #     aws ec2 modify-image-attribute --image-id $AMI_ID --launch-permission "Add=[{UserId=${{ secrets.AWS_DEMO_ACCOUNT_ID }} }]" --region $AWS_REGION
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      # GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
