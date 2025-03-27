@@ -35,3 +35,6 @@ packer init packer.pkr.hcl
 packer fmt packer.pkr.hcl
 packer validate packer.pkr.hcl
 
+added logs and metrics
+installed cloudwatch to check metrics and logs
+
