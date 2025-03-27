@@ -65,6 +65,7 @@ const File = sequelize.define('File', {
 
 // Health Check Endpoint
 app.get('/healthz', async (req, res) => {
+    const start = Date.now();
     try {
         await sequelize.authenticate();
         statsdClient.increment('api.healthz_count');
