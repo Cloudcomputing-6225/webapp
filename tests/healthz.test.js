@@ -49,14 +49,19 @@ describe('Health Check API Tests', () => {
         expect(res.statusCode).toBe(503);
 
         // Reconnect the DB after test
-        app.sequelize = new (await import('sequelize')).Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
-            host: process.env.DB_HOST,
-            port: process.env.DB_PORT,
-            dialect: 'mysql',
-            logging: false,
-        });
+        sequelize = new (await import('sequelize')).Sequelize(
+            process.env.DB_NAME,
+            process.env.DB_USER,
+            process.env.DB_PASS,
+            {
+                host: process.env.DB_HOST,
+                port: process.env.DB_PORT,
+                dialect: 'mysql',
+                logging: false,
+            }
+        );
+        await sequelize.authenticate();
 
-        await app.sequelize.authenticate(); // Reconnect DB
     });
 
     afterAll(async () => {

@@ -49,7 +49,7 @@ jobs:
         run: npm install
 
       - name: Run Integration Tests
-        run: npm test
+        run: npm test -- --detectOpenHandles
 
   # Build & Deploy AMI + GCP Image
   build:

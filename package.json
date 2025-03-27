@@ -26,6 +26,8 @@
     "winston": "^3.17.0"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.26.9",
+    "babel-jest": "^29.7.0",
     "jest": "^29.7.0",
     "nodemon": "^3.1.9",
     "sqlite3": "^5.1.7",

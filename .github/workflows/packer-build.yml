@@ -87,7 +87,7 @@ jobs:
         run: |
           echo "Running tests after waiting for application to fully initialize..."
           sleep 5
-          npm test
+          npm test -- --detectOpenHandles
 
   build:
     runs-on: ubuntu-latest

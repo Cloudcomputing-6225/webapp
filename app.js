@@ -54,14 +54,14 @@ const File = sequelize.define('File', {
 }, { tableName: 'files', timestamps: false });
 
 // Database Initialization
-(async () => {
-    try {
-        await sequelize.sync({ alter: true });
-        logger.info('Database synchronized');
-    } catch (error) {
-        logger.error('Database sync failed:', error);
-    }
-})();
+// (async () => {
+//     try {
+//         await sequelize.sync({ alter: true });
+//         logger.info('Database synchronized');
+//     } catch (error) {
+//         logger.error('Database sync failed:', error);
+//     }
+// })();
 
 // Health Check Endpoint
 app.get('/healthz', async (req, res) => {
@@ -187,10 +187,26 @@ app.delete('/v1/file/:id', async (req, res) => {
     }
 });
 
+// if (import.meta.url === `file://${process.argv[1]}`) {
+//     app.listen(port, () => {
+//         logger.info(`Server running on port ${port}`);
+//     });
+// }
+
 if (import.meta.url === `file://${process.argv[1]}`) {
-    app.listen(port, () => {
-        logger.info(`Server running on port ${port}`);
-    });
+    (async () => {
+        try {
+            await sequelize.sync({ alter: true });
+            logger.info('Database synchronized');
+
+            app.listen(port, () => {
+                logger.info(`Server running on port ${port}`);
+            });
+        } catch (error) {
+            logger.error('Failed to start server:', error);
+        }
+    })();
 }
+
 
 export { app, File, sequelize };
