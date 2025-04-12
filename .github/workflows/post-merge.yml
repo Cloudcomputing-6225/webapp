@@ -125,6 +125,13 @@ jobs:
         run: |
           echo "AMI_ID=$(jq -r '.builds[-1].artifact_id' ./manifest.json | awk -F ':' '{print $2}' | xargs)" >> $GITHUB_ENV
 
+      - name: Configure AWS credentials for Demo account
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.DEMO_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.DEMO_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
       - name: Create New Launch Template Version
         run: |
           aws ec2 create-launch-template-version \
@@ -136,9 +143,6 @@ jobs:
 
       - name: Apply Launch Template Refresh
         run: |
-          export AWS_ACCESS_KEY_ID=${{ secrets.DEMO_AWS_ACCESS_KEY_ID }}
-          export AWS_SECRET_ACCESS_KEY=${{ secrets.DEMO_AWS_SECRET_ACCESS_KEY }}
-
           refresh_response=$(aws autoscaling start-instance-refresh \
           --auto-scaling-group-name csye6225-asg \
           --desired-configuration '{"LaunchTemplate" : { "LaunchTemplateName":"csye6225-webapp", "Version":"$Latest" }}' \
