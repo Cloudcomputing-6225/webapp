@@ -125,46 +125,24 @@ jobs:
         run: |
           echo "AMI_ID=$(jq -r '.builds[-1].artifact_id' ./manifest.json | awk -F ':' '{print $2}' | xargs)" >> $GITHUB_ENV
 
-      - name: Create New Launch Template Version
+      - name: Create new Launch Template version in Demo
+        id: lt
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DEMO_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEMO_AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AMI_ID: ${{ env.AMI_ID }}
         run: |
-          export AWS_ACCESS_KEY_ID=${{ secrets.DEMO_AWS_ACCESS_KEY_ID }}
-          export AWS_SECRET_ACCESS_KEY=${{ secrets.DEMO_AWS_SECRET_ACCESS_KEY  }}
+          echo "🚀 Creating new Launch Template version with AMI: $AMI_ID"
 
-          aws ec2 create-launch-template-version \
-            --launch-template-name "csye6225-webapp" \
-            --version-description "New version with AMI ${{ env.AMI_ID }}" \
-            --region us-east-1 \
+          NEW_VERSION=$(aws ec2 create-launch-template-version \
+            --launch-template-name csye6225-webapp \
             --source-version 1 \
-            --launch-template-data '{"ImageId": "${{ env.AMI_ID }}" }'
+            --launch-template-data "{\"ImageId\":\"$AMI_ID\"}" \
+            --query 'LaunchTemplateVersion.VersionNumber' \
+            --output text \
+            --region $AWS_REGION)
 
-      - name: Apply Launch Template Refresh
-        run: |
-          export AWS_ACCESS_KEY_ID=${{ secrets.DEMO_AWS_ACCESS_KEY_ID }}
-          export AWS_SECRET_ACCESS_KEY=${{ secrets.DEMO_AWS_SECRET_ACCESS_KEY }}
-
-          refresh_response=$(aws autoscaling start-instance-refresh \
-          --auto-scaling-group-name csye6225-asg \
-          --desired-configuration '{"LaunchTemplate" : { "LaunchTemplateName":"csye6225-webapp", "Version":"$Latest" }}' \
-          --region us-east-1 \
-          --query 'InstanceRefreshId' \
-          --output text)
-
-          while true; do
-           refresh_status=$(aws autoscaling describe-instance-refreshes \
-             --auto-scaling-group-name csye6225-asg \
-             --instance-refresh-ids $refresh_response \
-             --region us-east-1 \
-             --query 'InstanceRefreshes[0].Status' \
-             --output text)
-
-            if [ "$refresh_status" == "Pending" ] || [ "$refresh_status" == "InProgress" ]; then
-              echo "⌛ Instance refresh in progress... waiting 60 seconds"
-              sleep 60
-            elif [ "$refresh_status" == "Successful" ]; then
-              echo "Instance refresh completed successfully."
-              break
-            else
-              echo "Instance refresh failed or unknown status: $refresh_status"
-              exit 1
-            fi
-          done
+          echo "Launch Template version created: $NEW_VERSION"
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "lt_version=$NEW_VERSION" >> $GITHUB_OUTPUT
