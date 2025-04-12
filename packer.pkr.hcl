@@ -82,11 +82,15 @@ build {
       "sudo apt install -y software-properties-common",
       "sudo add-apt-repository universe",
       "sudo apt-get update --fix-missing",
-      "sudo apt-get remove -y --purge libssl-dev",
-      "sudo apt-get autoremove -y",
       "sudo apt-get install -y libssl3",
       "sudo apt-get install -y libssl-dev",
+      "sudo apt-get remove --purge -y nodejs npm node-*",
+      "sudo apt-get autoremove -y",
+      "sudo apt-get clean",
+      # Install Node.js 18 via NodeSource
+      "curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -",
       "sudo apt-get install -y unzip nodejs npm",
+
 
       # Create application user
       "sudo groupadd -f csye6225",
