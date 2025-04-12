@@ -1,29 +1,102 @@
-name: Webapp Deployment - Post PR Merge
+name: Deployment on PR Merge
 
 on:
   pull_request:
-    types: [closed]
-    branches:
-      - main
+    types:
+      - closed
 
 jobs:
   deploy:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: "${{ secrets.DB_NAME }}"
+          MYSQL_USER: "${{ secrets.DB_USER }}"
+          MYSQL_PASSWORD: "${{ secrets.DB_PASS }}"
+          MYSQL_ROOT_PASSWORD: "${{ secrets.DB_PASS }}"
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root --password=$MYSQL_ROOT_PASSWORD --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: ${{ matrix.node-version }}
 
       - name: Install Dependencies
         run: npm ci
 
-      - name: Build Application Artifacts
+      - name: Install Required Packages
+        run: npm install aws-sdk file-type dotenv mysql2 chai supertest mocha sinon winston node-statsd
+
+      - name: Create .env File Using Secrets
+        run: |
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env
+          echo "S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "PORT=3001" >> .env
+          chmod 600 .env
+
+      - name: Wait for MySQL to be Ready
+        run: |
+          for i in {1..15}; do
+            if mysqladmin ping -h 127.0.0.1 -u"${{ secrets.DB_USER }}" -p"${{ secrets.DB_PASS }}" --silent; then
+              echo "MySQL is ready!"
+              exit 0
+            fi
+            echo "Waiting for MySQL to be ready..."
+            sleep 5
+          done
+          echo "MySQL did not start in time." && exit 1
+
+      - name: Start Web Application
+        run: |
+          echo "Starting the web application..."
+          npm start &
+          sleep 5
+        env:
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          PORT: 3001
+
+      - name: Run integration-test
+        run: |
+          echo "Running tests after waiting for application to fully initialize..."
+          sleep 5
+          npm test
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Building the Artifacts (Including `tests` Folder)
         run: |
           mkdir -p build
           cp app.js package.json package-lock.json -r tests build/
