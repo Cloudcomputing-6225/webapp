@@ -8,8 +8,8 @@ Group=csye6225
 WorkingDirectory=/home/csye6225/webapp
 ExecStart=/usr/bin/node /home/csye6225/webapp/app.js
 Restart=always
-StandardOutput=file:/var/log/myapp.log
-StandardError=file:/var/log/myapp-error.log
+StandardOutput=journal
+StandardError=journal
 EnvironmentFile=/home/csye6225/webapp/.env
 
 [Install]
