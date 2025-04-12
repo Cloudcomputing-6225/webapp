@@ -72,7 +72,6 @@ build {
     source      = "webapp.zip"
     destination = "/tmp/webapp.zip"
   }
-
   # Install MySQL, Node.js, and Extract Application
   provisioner "shell" {
     inline = [

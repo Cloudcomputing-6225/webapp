@@ -81,6 +81,23 @@ app.all('/healthz', (req, res, next) => {
     next();
 });
 
+// app.get('/cicd', async (req, res) => {
+//     try {
+//         await sequelize.authenticate();
+//         res.status(200).json({ message: "CI/CD deployment successful" });
+//     } catch (error) {
+//         logger.error('CI/CD check failed:', error);
+//         res.status(503).json({ message: "Service unavailable" });
+//     }
+// });
+
+// app.all('/cicd', (req, res, next) => {
+//     if (req.method !== 'GET') {
+//         return res.status(405).json({ message: "Method Not Allowed" });
+//     }
+//     next();
+// });
+
 // Configure Multer for Form-Data Uploads
 const upload = multer({
     limits: { fileSize: 10 * 1024 * 1024 },

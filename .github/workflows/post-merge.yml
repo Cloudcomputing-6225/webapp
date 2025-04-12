@@ -1,0 +1,97 @@
+name: Webapp Deployment - Post PR Merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  deploy:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Application Artifacts
+        run: |
+          mkdir -p build
+          cp app.js package.json package-lock.json -r tests build/
+          zip -r webapp.zip build/
+
+      - name: Install Packer
+        run: |
+          curl -fsSL https://releases.hashicorp.com/packer/1.7.0/packer_1.7.0_linux_amd64.zip -o packer.zip
+          unzip packer.zip
+          sudo mv packer /usr/local/bin/
+          packer --version
+
+      - name: Initialize and Validate Packer Template
+        run: |
+          packer init packer.pkr.hcl
+          packer validate packer.pkr.hcl
+
+      - name: Build Packer AMI in Dev Account
+        run: |
+          packer build packer.pkr.hcl
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Retrieve AMI ID
+        run: |
+          echo "AMI_ID=$(jq -r '.builds[-1].artifact_id' ./manifest.json | awk -F ':' '{print $2}' | xargs)" >> $GITHUB_ENV
+
+      - name: Create New Launch Template Version
+        run: |
+          export AWS_ACCESS_KEY_ID=${{ secrets.DEMO_AWS_ACCESS_KEY_ID }}
+          export AWS_SECRET_ACCESS_KEY=${{ secrets.DEMO_AWS_SECRET_ACCESS_KEY  }}
+
+          aws ec2 create-launch-template-version \
+            --launch-template-name "csye6225-webapp" \
+            --version-description "New version with AMI ${{ env.AMI_ID }}" \
+            --region us-east-1 \
+            --source-version 1 \
+            --launch-template-data '{"ImageId": "${{ env.AMI_ID }}" }'
+
+      - name: Apply Launch Template Refresh
+        run: |
+          export AWS_ACCESS_KEY_ID=${{ secrets.DEMO_AWS_ACCESS_KEY_ID }}
+          export AWS_SECRET_ACCESS_KEY=${{ secrets.DEMO_AWS_SECRET_ACCESS_KEY }}
+
+          refresh_response=$(aws autoscaling start-instance-refresh \
+          --auto-scaling-group-name csye6225-asg \
+          --desired-configuration '{"LaunchTemplate" : { "LaunchTemplateName":"csye6225-webapp", "Version":"$Latest" }}' \
+          --region us-east-1 \
+          --query 'InstanceRefreshId' \
+          --output text)
+
+          while true; do
+           refresh_status=$(aws autoscaling describe-instance-refreshes \
+             --auto-scaling-group-name csye6225-asg \
+             --instance-refresh-ids $refresh_response \
+             --region us-east-1 \
+             --query 'InstanceRefreshes[0].Status' \
+             --output text)
+
+            if [ "$refresh_status" == "Pending" ] || [ "$refresh_status" == "InProgress" ]; then
+              echo "⌛ Instance refresh in progress... waiting 60 seconds"
+              sleep 60
+            elif [ "$refresh_status" == "Successful" ]; then
+              echo "Instance refresh completed successfully."
+              break
+            else
+              echo "Instance refresh failed or unknown status: $refresh_status"
+              exit 1
+            fi
+          done
