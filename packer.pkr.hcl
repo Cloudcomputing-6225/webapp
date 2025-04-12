@@ -83,8 +83,8 @@ build {
       "sudo apt-get update --fix-missing",
       "sudo apt-get remove -y --purge libssl-dev",
       "sudo apt-get autoremove -y",
-      "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl3t64=3.0.13-0ubuntu3.5",
-      "sudo apt-get install -y --allow-downgrades --allow-change-held-packages libssl-dev",
+      "sudo apt-get install -y libssl3",
+      "sudo apt-get install -y libssl-dev",
       "sudo apt-get install -y unzip nodejs npm",
 
       # Create application user
