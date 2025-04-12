@@ -49,7 +49,7 @@ variable "instance_type" {
 source "amazon-ebs" "ubuntu" {
   profile       = var.AWS_PROFILE
   region        = var.AWS_REGION
-  source_ami    = "ami-0fe67b8200454bad4"
+  source_ami    = "ami-0fc5d935ebf8bc3bc"
   instance_type = var.instance_type
   ssh_username  = "ubuntu"
   ami_name      = "custom-ubuntu-24.04-{{timestamp}}"
@@ -72,6 +72,7 @@ build {
     source      = "webapp.zip"
     destination = "/tmp/webapp.zip"
   }
+
   # Install MySQL, Node.js, and Extract Application
   provisioner "shell" {
     inline = [
@@ -160,4 +161,3 @@ build {
     }
   }
 }
-
